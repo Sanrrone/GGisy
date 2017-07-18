@@ -42,7 +42,7 @@ where:
 * -l is the aligment length cutoff to post processing.
 * -i is the identity cutoff for the aligment.
 * -t is the threads used for blastn
-* -c is a boolean to delete the files generated or not.
+* -c is a boolean to delete the files generated or not (True by default).
 
 ## Trick
 
@@ -52,8 +52,8 @@ example:
 	
 	python GGisy.py -r [reference] -q [query] -l 50000 -i 80  -b myBlastOutput.tsv
 
-* GGisy have an option to don't delete the files (-c), if you run for the first the program you notice a file called **tmp.tsv**, this file es the blast output in format 6, and you can avoid the next run just passing this file with the **-b** option, I recommend to use this option to re-run the program with another cutoff parameters (**-l** and **-i**)
+* GGisy have an option to don't delete the files (**-c False**), if you run for the first the program you notice a file called **tmp.tsv**, this file es the blast output in format 6, and you can avoid the next run just passing this file with the **-b** option, I recommend to use this option to re-run the program with another cutoff parameters (**-l** and **-i**)
 	
 ## Warnings
 
-* The contigs name between the two genomes must be uniques 
+* The contigs name between the two genomes must be uniques
