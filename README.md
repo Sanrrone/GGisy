@@ -44,7 +44,7 @@ where:
 * -t is the threads used for blastn
 * -c is a boolean to delete the files generated or not.
 
-##Trick
+## Trick
 
 You can avoid the blast work if you provide a blast output with "-b" (output format 6 is mandatory), with this parameter the program jump directly to parse it and you only have to define the cutoffs.
 
@@ -52,6 +52,6 @@ example:
 	
 	python GGisy.py -r [reference] -q [query] -l 50000 -i 80  -b tmp.tsv
 	
-##Warnings
+## Warnings
 
 * The contigs name between the two genomes must be uniques 
