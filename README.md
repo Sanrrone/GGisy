@@ -46,11 +46,13 @@ where:
 
 ## Trick
 
-You can avoid the blast work if you provide a blast output with "-b" (output format 6 is mandatory), with this parameter the program jump directly to parse it and you only have to define the cutoffs.
+* You can avoid the blast work if you provide a blast output with "-b" (output format 6 is mandatory), with this parameter the program jump directly to parse it and you only have to define the cutoffs.
 
 example:
 	
-	python GGisy.py -r [reference] -q [query] -l 50000 -i 80  -b tmp.tsv
+	python GGisy.py -r [reference] -q [query] -l 50000 -i 80  -b myBlastOutput.tsv
+
+* GGisy have an option to don't delete the files (-c), if you run for the first the program you notice a file called **tmp.tsv**, this file es the blast output in format 6, and you can avoid the next run just passing this file with the **-b** option, I recommend to use this option to re-run the program with another cutoff parameters (**-l** and **-i**)
 	
 ## Warnings
 
