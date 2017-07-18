@@ -3,7 +3,9 @@ Genome-Genome circle synteny is a program that show the closest regions between 
 
 ## Example output
 
+![Alt](https://github.com/Sanrrone/GGisy/blob/master/example/synteny.pdf)
 
+<img src="https://github.com/Sanrrone/GGisy/blob/master/example/synteny.pdf" alt="some text">
 
 ## Requeriments
 
