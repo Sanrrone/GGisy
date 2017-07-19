@@ -105,7 +105,9 @@ def blasting(genome1, genome2, evalue, threads):
 	#searching for blast binaries
 
 	subprocess.call(["makeblastdb", "-in", genome1, "-input_type", "fasta", "-dbtype", "nucl", "-out", "ref"])
-	subprocess.call(["blastn", "-query", genome2, "-db", "ref", "-evalue", evalue, "-outfmt", "6", "-strand", "both", "-num_threads", threads, "-out", "tmp.tsv"])
+	subprocess.call(["blastn", "-query", genome2, "-db", "ref", 
+		"-evalue", evalue, "-outfmt", "6", "-strand", "both", 
+		"-num_threads", threads, "-out", "tmp.tsv"])
 
 	return str("tmp.tsv")
 
@@ -157,37 +159,16 @@ rownames(ref)<-ref$V1
 rownames(query)<-query$V1
 qryUniq<-unique(sort(handle$V1))
 refUniq<-unique(sort(handle$V2))
-gl<-sum(query[qryUniq,3])
-gl<-gl+sum(ref[refUniq,3])
 ref<-ref[refUniq,]
 query<-query[qryUniq,]
 data<-rbind(ref,query)
 lowId<-min(handle$V3)
-link.pg.v<-data.frame(seg1=handle$V1, start1=handle$V4, end1=handle$V5, seg2=handle$V2, start2=handle$V6, end2=handle$V7)
-measure<-data.frame(seg.name=seq(1:8), seg.start=seq(1:8), seg.end=seq(1:8)+1, seg.value=1)
-measure2<-data.frame(seg.name=1, seg.start=1, seg.end=signif(2*gl/12/1000), seg.value=round(2*gl/12/1000,0))
-measure4<-data.frame(seg.name=1, seg.start=1, seg.end=signif(4*gl/12/1000), seg.value=round(4*gl/12/1000,0))
-measure8<-data.frame(seg.name=1, seg.start=1, seg.end=signif(8*gl/12/1000), seg.value=round(8*gl/12/1000,0))
-measure10<-data.frame(seg.name=1, seg.start=1, seg.end=signif(10*gl/12/1000), seg.value=round(10*gl/12/1000,0))
-measure["V5"]<-measure2["V5"]<-measure4["V5"]<-measure8["V5"]<-measure10["V5"]<-1
+fhand<-handle[handle$V6<handle$V7,]
+rhand<-handle[handle$V6>handle$V7,]
+linkf<-data.frame(seg1=fhand$V1, start1=fhand$V4, end1=fhand$V5, seg2=fhand$V2, start2=fhand$V6, end2=fhand$V7)
+linkr<-data.frame(seg1=rhand$V1, start1=rhand$V4, end1=rhand$V5, seg2=rhand$V2, start2=rhand$V6, end2=rhand$V7)
 data["V5"]<-data["V4"]<-1
 colnames(data)<- c("chr", "start", "end","V4","V5")
-tocirmeasure<-segAnglePo(measure, seg=c(as.matrix(measure["seg.name"][,])))
-tocirmeasure[2,2]<-300;tocirmeasure[2,3]<-620
-tocirmeasure[3,2]<-0;tocirmeasure[3,3]<-620
-tocirmeasure[4,2]<-420;tocirmeasure[4,3]<-620
-tocirmeasure[5,2]<-90;tocirmeasure[5,3]<-620
-tocirmeasure[6,2]<-120;tocirmeasure[6,3]<-620
-tocirmeasure[7,2]<-180;tocirmeasure[7,3]<-620
-tocirmeasure[8,2]<-240;tocirmeasure[8,3]<-620
-tocirmeasure2<-segAnglePo(measure2, seg=c(as.matrix(measure2["seg.name"][,])))
-tocirmeasure2[1,2]<-330
-tocirmeasure4<-segAnglePo(measure4, seg=c(as.matrix(measure4["seg.name"][,])))
-tocirmeasure4[1,2]<-395
-tocirmeasure8<-segAnglePo(measure8, seg=c(as.matrix(measure8["seg.name"][,])))
-tocirmeasure8[1,2]<-146
-tocirmeasure10<-segAnglePo(measure10, seg=c(as.matrix(measure10["seg.name"][,])))
-tocirmeasure10[1,2]<-210
 tocir <- segAnglePo(data, seg=c(as.matrix(data["chr"][,])))
 colors<-rev(colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(20))
 delta<-(100-lowId)/20
@@ -211,7 +192,8 @@ addalpha <- function(col, alpha=1){
           rgb(x[1], x[2], x[3], alpha=alpha))  
 }
 colors<-addalpha(colors,0.8)
-link.pg.v[,"colors"]<-addalpha(scaleColors(handle$V3),0.8)
+linkf[,"colors"]<-addalpha(scaleColors(fhand$V3),0.8)
+linkr[,"colors"]<-addalpha(scaleColors(rhand$V3),0.8)
 pdf(file="synteny.pdf", width = 10, height =10)
 par(mar=c(2,2,2,2))
 xorigin=600
@@ -219,7 +201,14 @@ yorigin=740
 plot(c(0,1500), c(0,1500), type="n", axes=FALSE, xlab="", ylab="", main="")
 circos(R=450, cir=tocir, W=10,type="chr", print.chr.lab=T, scale=F,xc = xorigin,yc = yorigin,
        col = c(rep("dark blue",nrow(ref)),rep("#FEE496",nrow(query))),cex = 10)
-circos(R=445, cir=tocir, W=10, mapping=link.pg.v , type="link.pg", lwd=1, col=link.pg.v$colors,xc = xorigin,yc = yorigin)
+circos(R=445, cir=tocir, W=10, mapping=linkf , type="link.pg", lwd=1, col=linkf$colors,xc = xorigin,yc = yorigin)
+circos(R=445, cir=tocir, W=10, mapping=linkr , type="link.pg", lwd=1, col=linkr$colors,xc = xorigin,yc = yorigin)
+newlinkr<-linkr
+newlinkr$start1<-(newlinkr$end1-newlinkr$start1)/2
+newlinkr$start2<-(newlinkr$start2-newlinkr$end2)/2
+black<-addalpha("#000000",0.8)
+#circos(R=445, cir=tocir, W=10, mapping=newlinkr , type="link2", lwd=1, col=black,xc = xorigin,yc = yorigin)
+
 legend(x = 1230, y=1300, legend = c(unlist(strsplit(refname,"_info\\\.tsv"))[1],unlist(strsplit(queryname,"_info\\\.tsv"))[1]),
        ncol = 1, cex = 0.8,  bty="n",
        fill=c("dark blue","#FEE496"),
