@@ -14,6 +14,7 @@ Genome-Genome circle synteny is a program that show the closest regions between 
 * R (tested in 3.3.1) with the following libraries:
 	* omiccircos
 	* RColorBrewer
+	* varhandle
 
 * Python v2.7 with biopython library
 * BLAST+
