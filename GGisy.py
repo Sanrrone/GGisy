@@ -30,7 +30,6 @@ def main():
 	parser.add_option("-t","--threads",dest="Threads",help="Number of threads to be used for blast [default: 4]",default=4)
 	parser.add_option("-b","--blastout",dest="Blastout",help="Blast output file to be used instead doing it [default: none]",default=None)
 	parser.add_option("-c","--clean",dest="clean",help="clean files after execution [default: True]",default=True)
-	parser.add_option("-p","--contigLabel",dest="clabel",help="print contig label [default: True]",default=True)
 
 	(options,args) = parser.parse_args()
 
@@ -42,7 +41,6 @@ def main():
 	threads= str(options.Threads) #for subcallproccess must be str()
 	blastout= options.Blastout #dont cast to str
 	cleanf=options.clean
-	clabel=options.clabel
 
 	#check variables
 	if not genome1 or genome1 is None:
@@ -81,8 +79,8 @@ def main():
 		print "No Rscript was found, make sure is in your $PATH"
 		sys.exit()
 
-	Inputs = collections.namedtuple('Inputs', ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9'])
-	I = Inputs(genome1, genome2, alignL, evalue, Identity, threads, blastout, cleanf, clabel)
+	Inputs = collections.namedtuple('Inputs', ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'])
+	I = Inputs(genome1, genome2, alignL, evalue, Identity, threads, blastout, cleanf)
 	return I
 
 def which(program): #function to check if some program exists 
@@ -143,7 +141,7 @@ def parsingGenomes(genome):
 	PARSED.close
 	return str(gname+"_info.tsv")
 
-def handleR(conn, reference, query, alignL, clabel):
+def handleR(conn, reference, query, alignL):
 
 	plotstep=open("handle.R", 'w')
 	plotstep.write("""rm(list=ls());
@@ -155,7 +153,6 @@ handlefile<-as.character(args[6])
 refname<-as.character(args[7])
 queryname<-as.character(args[8])
 filterl<-as.numeric(args[9])
-contiglabel<-as.character(args[10])
 handle<-read.table(handlefile,sep = "\\t",stringsAsFactors = F,check.names = F)
 ref<-read.table(refname,sep = "\\t",stringsAsFactors = F,check.names = F)
 query<-read.table(queryname,sep = "\\t", stringsAsFactors = F,check.names = F)
@@ -185,19 +182,37 @@ for(i in 1:nrow(linkr)){
 data["V5"]<-data["V4"]<-1
 colnames(data)<- c("chr", "start", "end","V4","V5")
 tocir <- segAnglePo(data, seg=data$chr)
-faketocir <- tocir
-faketocir[,1]<-""
-gl<-sum(data$end)
-#define spacer
-spacer<-as.integer(358/nrow(data))
-for(i in 1:(nrow(tocir)-1)){
+gl<-sum(data$end)+nrow(data)
+maxangr<-270+(350/gl)*sum(ref$V3)
+spacer<-maxangr/(maxangr-270)/nrow(ref)
+
+for(i in 1:nrow(ref)){
   #358 is the total angles (aviable) for all
-  tocir[i,"angle.end"]<-as.character(as.numeric(tocir[i,"angle.start"]) + (358/gl)*as.numeric(tocir[i,7]))
-  tocir[i+1,"angle.start"]<-as.character(as.numeric(tocir[i,"angle.end"])+ spacer)
+  tocir[i,"angle.end"]<-as.character(as.numeric(tocir[i,"angle.start"]) + (350/gl)*as.numeric(tocir[i,7]))
+  tocir[i+1,"angle.start"]<-as.character(as.numeric(tocir[i,"angle.end"])+spacer)
 }
-tocir[i+1,"angle.end"]<-as.character(as.numeric(tocir[i+1,"angle.start"]) + (358/gl)*as.numeric(tocir[i,7]))
+tocir[i+1,"angle.start"]<-as.character(as.numeric(tocir[i+1,"angle.start"])+2.5)
+tocir[i+1,"angle.end"]<-as.character(as.numeric(tocir[i+1,"angle.start"]) + (350/gl)*as.numeric(tocir[i+1,7]))
+
+maxangq<-628-maxangr
+spacer<-628/maxangq/nrow(query)
+if(nrow(ref)+2>=nrow(tocir)){
+  i<-nrow(tocir)
+  tocir[i,"angle.start"]<-as.character(as.numeric(tocir[i-1,"angle.end"])+spacer)
+  tocir[i,"angle.end"]<-as.character(628)
+}else{
+  for(i in (nrow(ref)+2):nrow(tocir)-1){
+    #358 is the total angles (aviable) for all
+    tocir[i,"angle.end"]<-as.character(as.numeric(tocir[i,"angle.start"]) + (350/gl)*as.numeric(tocir[i,7]))
+    tocir[i+1,"angle.start"]<-as.character(as.numeric(tocir[i,"angle.end"])+spacer)
+  } 
+}
 refang<-as.numeric(tocir[1:nrow(ref),2])
 qryang<-as.numeric(tocir[(nrow(ref)+1):(nrow(ref)+nrow(query)),2])
+maxangr<-max(refang)
+maxangq<-max(qryang)
+faketocir <- tocir
+faketocir[,1]<-""
 maxangr<-max(refang)
 for(i in 1:nrow(tocir)){
   if(270+(maxangr-270)/2<as.numeric(tocir[i,2])){
@@ -233,13 +248,13 @@ addalpha <- function(col, alpha=1){
         function(x) 
           rgb(x[1], x[2], x[3], alpha=alpha))
 }
-black<-addalpha("#000000",0.8)
-colors<-addalpha(colors,0.8)
-linkf[,"colors"]<-addalpha(scaleColors(fhand$V3),0.8)
-linkr[,"colors"]<-addalpha(scaleColors(rhand$V3),0.8)
+black<-addalpha("#000000",0.7)
+colors<-addalpha(colors,0.7)
+linkf[,"colors"]<-addalpha(scaleColors(fhand$V3),0.7)
+linkr[,"colors"]<-addalpha(scaleColors(rhand$V3),0.7)
 pdf(file="synteny.pdf", width = 10, height =10)
 
-if(contiglabel=="True"){
+if(nrow(data)<=20){
   par(mar=c(2,2,2,2))
   xorigin=700
   yorigin=1000
@@ -278,7 +293,6 @@ if(contiglabel=="True"){
          x.intersp = 0.5,text.width=c(0.5,0.5),
          title="Identity percent\\n")
 }else{
-  
   par(mar=c(2,2,2,2))
   xorigin=750
   yorigin=550
@@ -293,25 +307,23 @@ if(contiglabel=="True"){
   highlightq <- c(420, 450, query[1,1], 1, query[nrow(query),1], query[nrow(query),3], "#FEE496", NA)
   circos(cir=tocir, mapping=highlightr, type="hl",xc = xorigin,yc = yorigin)
   circos(cir=tocir, mapping=highlightq, type="hl",xc = xorigin,yc = yorigin)
-  
   circos(R=400, cir=tocir, mapping=linkf , type="link.pg", lwd=0.5, col=linkf$colors,xc = xorigin,yc = yorigin)
   circos(R=400, cir=tocir, mapping=linkr , type="link.pg", lwd=0.5, col=linkr$colors,xc = xorigin,yc = yorigin)
   newlinkr<-linkr
   newlinkr$start1<-newlinkr$start1+as.integer((newlinkr$end1-newlinkr$start1)/2)+1
   newlinkr$start2<-newlinkr$start2+as.integer((newlinkr$end2-newlinkr$start2)/2)-1
   circos(R=400, cir=tocir, W=10, mapping=newlinkr , type="link", lwd=0.3, col=black,xc = xorigin,yc = yorigin)
-  
-  legend(x = 10, y=1500, legend = c(paste("Reference: ", nrow(ref), " (", sum(ref$V3), " bp)", sep = ""), paste("Query: ",nrow(query), " (", sum(query$V3), " bp)", sep="")),
+  legend(x = 210, y=1500, legend = c(paste("Reference: ", nrow(ref), " (", sum(ref$V3), " bp)", sep = ""), paste("Query: ",nrow(query), " (", sum(query$V3), " bp)", sep="")),
          ncol = 1, cex = 0.8,  bty="n",
          fill=c("dark blue","#FEE496"),
          border = c("dark blue","#FEE496"),text.width=c(0.5,0.5),
          title=paste("Contigs align >= ", filterl, " bp", sep=""))
-  legend(x = 135, y=1300, legend = c("Forward","Reverse"),lty = c(0,1),merge=T,seg.len = 0.6,
+  legend(x = 270, y=1300, legend = c("Forward","Reverse"),lty = c(0,1),merge=T,seg.len = 0.6,
          ncol = 1, cex = 0.8,  bty="n",
          fill="white",
          border = "black",text.width=c(0.5,0.5),
          title="Strand Match\\n(on reference)")
-  legend(x = 960, y=1500, legend = c("100","","","","","","","","","",(100-lowId)/2 + lowId,"","","","","","","","",lowId),
+  legend(x = 990, y=1500, legend = c("100","","","","","","","","","",(100-lowId)/2 + lowId,"","","","","","","","",lowId),
          ncol = 1, cex = 0.8,  bty="n",
          fill=colors,
          border = colors,
@@ -321,7 +333,7 @@ if(contiglabel=="True"){
 }
 dev.off()""")
 	plotstep.close()
-	subprocess.call(["Rscript", "handle.R", conn, reference, query, str(alignL), str(clabel), "--vanilla"])
+	subprocess.call(["Rscript", "handle.R", conn, reference, query, str(alignL), "--vanilla"])
 
 
 def cleanfiles(ginfo1, ginfo2):
@@ -350,7 +362,7 @@ if __name__ == '__main__':
 	filterBlastOutput(blastout=blastout, alignL=mainV.v3, evalue=mainV.v4, identity=mainV.v5)
 	ref=parsingGenomes(genome=mainV.v1)
 	que=parsingGenomes(genome=mainV.v2)
-	handleR(conn="synteny.tsv",reference=ref, query=que, alignL=mainV.v3, clabel=mainV.v9)
+	handleR(conn="synteny.tsv",reference=ref, query=que, alignL=mainV.v3)
 	
 	if mainV.v8 == True:
 		cleanfiles(ref,que)
