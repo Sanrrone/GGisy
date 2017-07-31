@@ -3,11 +3,9 @@ Genome-Genome circle synteny is a program that show the closest regions between 
 
 ## Example output
 
-<object data="example/synteny.pdf" type="application/pdf" width="700px" height="700px">
-    <embed src="example/synteny.pdf">
-        This browser does not support PDFs. Please download the PDF to view it: <a href="example/synteny.pdf">Download PDF</a>.</p>
-    </embed>
-</object>
+![](example/synteny1.png)
+------
+![](example/synteny2.png)
 
 ## Requeriments
 
@@ -44,6 +42,21 @@ where:
 * -i is the identity cutoff for the aligment.
 * -t is the threads used for blastn
 * -c is a boolean to delete the files generated or not (True by default).
+
+### Examples:
+
+Synteny between two genomes filtering regions <= 5000bp:
+
+	python GGisy.py -r example/genome1.fna -q example/genome2.fna -l 10000 -i 50 -t 8 -c False
+	
+Synteny between two genomes conserving all files (indexes, raw blast output, parsed blast output, etc.)
+
+	python GGisy.py -r example/genome1.fna -q example/genome2.fna -c False
+
+Synteny between two genomes setting identity percent cutoff:
+
+	python GGisy.py -r example/genome1.fna -q example/genome2.fna -i 90
+
 
 ## Trick
 
