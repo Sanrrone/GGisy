@@ -70,4 +70,5 @@ example:
 	
 ## Warnings
 
-* The contigs name between the two genomes must be uniques
+* The contigs name between the two genomes must be uniques.
+* A lot of contigs will cause the graph not legible.
