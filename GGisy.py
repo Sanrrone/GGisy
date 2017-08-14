@@ -165,8 +165,8 @@ ref<-ref[with(ref, order(-V3, V1)), ]
 query<-query[qryUniq,]
 query<-query[with(query, order(+V3, V1)), ]
 data<-rbind(ref,query)
-refname<-unlist(strsplit(refname,"_info\\\.tsv"))[1]
-queryname<-unlist(strsplit(queryname,"_info\\\.tsv"))[1]
+refname<-unlist(strsplit(refname,"_info.tsv"))[1]
+queryname<-unlist(strsplit(queryname,"_info.tsv"))[1]
 lowId<-min(handle$V3)
 fhand<-handle[handle$V6<handle$V7,]
 rhand<-handle[handle$V6>handle$V7,]
@@ -249,9 +249,15 @@ addalpha <- function(col, alpha=1){
           rgb(x[1], x[2], x[3], alpha=alpha))
 }
 black<-addalpha("#000000",0.7)
-colors<-addalpha(colors,0.7)
-linkf[,"colors"]<-addalpha(scaleColors(fhand$V3),0.7)
-linkr[,"colors"]<-addalpha(scaleColors(rhand$V3),0.7)
+colors<-addalpha(colors,1)
+try({
+  linkf[,"colors"]<-addalpha(scaleColors(fhand$V3),1)
+},silent = T)
+try({
+  linkr[,"colors"]<-addalpha(scaleColors(rhand$V3),1)
+},silent = T)
+
+
 pdf(file="synteny.pdf", width = 10, height =10)
 
 if(nrow(data)<=20){
@@ -263,12 +269,17 @@ if(nrow(data)<=20){
   circos(R=450, cir=tocir, W=10,type="chr", print.chr.lab=T, scale=F,xc = xorigin,yc = yorigin,
            col = c(rep("dark blue",nrow(ref)),rep("#FEE496",nrow(query))),cex = 5)
 
-  circos(R=440, cir=tocir, mapping=linkf , type="link.pg", lwd=0.5, col=linkf$colors,xc = xorigin,yc = yorigin)
-  circos(R=440, cir=tocir, mapping=linkr , type="link.pg", lwd=0.5, col=linkr$colors,xc = xorigin,yc = yorigin)
-  newlinkr<-linkr
-  newlinkr$start1<-newlinkr$start1+as.integer((newlinkr$end1-newlinkr$start1)/2)+1
-  newlinkr$start2<-newlinkr$start2+as.integer((newlinkr$end2-newlinkr$start2)/2)-1
-  circos(R=440, cir=tocir, W=10, mapping=newlinkr , type="link", lwd=0.5, col=black,xc = xorigin,yc = yorigin)
+  if(nrow(linkf)>0){
+    circos(R=440, cir=tocir, mapping=linkf , type="link.pg", lwd=0.5, col=linkf$colors,xc = xorigin,yc = yorigin)
+  }  
+  if(nrow(linkr)>0){
+    circos(R=440, cir=tocir, mapping=linkr , type="link.pg", lwd=0.5, col=linkr$colors,xc = xorigin,yc = yorigin)
+    newlinkr<-linkr
+    newlinkr$start1<-newlinkr$start1+as.integer((newlinkr$end1-newlinkr$start1)/2)+1
+    newlinkr$start2<-newlinkr$start2+as.integer((newlinkr$end2-newlinkr$start2)/2)-1
+    circos(R=440, cir=tocir, W=10, mapping=newlinkr , type="link", lwd=0.6, col=black,xc = xorigin,yc = yorigin)  
+  }
+
   
   legend(x = 1500, y=1700, legend = c(refname,queryname),
          ncol = 1, cex = 0.8,  bty="n",
@@ -284,14 +295,14 @@ if(nrow(data)<=20){
          ncol = 1, cex = 0.8,  bty="n",
          fill="white",
          border = "black",text.width=c(0.5,0.5),
-         title="Strand Match\\n(on reference)")
+         title="Strand Match\n(on reference)")
   legend(x = 1505, y=1100, legend = c("100","","","","","","","","","",(100-lowId)/2 + lowId,"","","","","","","","",lowId),
          ncol = 1, cex = 0.8,  bty="n",
          fill=colors,
          border = colors,
          y.intersp = 0.5,
          x.intersp = 0.5,text.width=c(0.5,0.5),
-         title="Identity percent\\n")
+         title="Identity percent\n")
 }else{
   par(mar=c(2,2,2,2))
   xorigin=750
@@ -303,16 +314,21 @@ if(nrow(data)<=20){
   circos(R=410, cir=tocir, W=10,type="chr", print.chr.lab=F, scale=F,xc = xorigin,yc = yorigin,
          col = c(rep("dark blue",nrow(ref)),rep("#FEE496",nrow(query))),cex = 5)
   
-  highlightr <- c(420, 450, tocir[1,1], 1, tocir[nrow(ref),1], tocir[nrow(ref),7], "dark blue", NA)
-  highlightq <- c(420, 450, query[1,1], 1, query[nrow(query),1], query[nrow(query),3], "#FEE496", NA)
-  circos(cir=tocir, mapping=highlightr, type="hl",xc = xorigin,yc = yorigin)
-  circos(cir=tocir, mapping=highlightq, type="hl",xc = xorigin,yc = yorigin)
-  circos(R=400, cir=tocir, mapping=linkf , type="link.pg", lwd=0.5, col=linkf$colors,xc = xorigin,yc = yorigin)
-  circos(R=400, cir=tocir, mapping=linkr , type="link.pg", lwd=0.5, col=linkr$colors,xc = xorigin,yc = yorigin)
-  newlinkr<-linkr
-  newlinkr$start1<-newlinkr$start1+as.integer((newlinkr$end1-newlinkr$start1)/2)+1
-  newlinkr$start2<-newlinkr$start2+as.integer((newlinkr$end2-newlinkr$start2)/2)-1
-  circos(R=400, cir=tocir, W=10, mapping=newlinkr , type="link", lwd=0.3, col=black,xc = xorigin,yc = yorigin)
+  if(nrow(linkf)>0){
+    highlightr <- c(420, 450, tocir[1,1], 1, tocir[nrow(ref),1], tocir[nrow(ref),7], "dark blue", NA)
+    circos(cir=tocir, mapping=highlightr, type="hl",xc = xorigin,yc = yorigin)
+    circos(R=400, cir=tocir, mapping=linkf , type="link.pg", lwd=0.5, col=linkf$colors,xc = xorigin,yc = yorigin)
+  }
+  if(nrow(linkr)>0){
+    highlightq <- c(420, 450, query[1,1], 1, query[nrow(query),1], query[nrow(query),3], "#FEE496", NA)
+    circos(cir=tocir, mapping=highlightq, type="hl",xc = xorigin,yc = yorigin)
+    circos(R=400, cir=tocir, mapping=linkr , type="link.pg", lwd=0.5, col=linkr$colors,xc = xorigin,yc = yorigin)
+    newlinkr<-linkr
+    newlinkr$start1<-newlinkr$start1+as.integer((newlinkr$end1-newlinkr$start1)/2)+1
+    newlinkr$start2<-newlinkr$start2+as.integer((newlinkr$end2-newlinkr$start2)/2)-1
+    circos(R=400, cir=tocir, W=10, mapping=newlinkr , type="link", lwd=0.3, col=black,xc = xorigin,yc = yorigin)
+    
+  }
   legend(x = 210, y=1500, legend = c(paste("Reference: ", nrow(ref), " (", sum(ref$V3), " bp)", sep = ""), paste("Query: ",nrow(query), " (", sum(query$V3), " bp)", sep="")),
          ncol = 1, cex = 0.8,  bty="n",
          fill=c("dark blue","#FEE496"),
