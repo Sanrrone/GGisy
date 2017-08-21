@@ -71,4 +71,4 @@ example:
 ## Warnings
 
 * The contigs name between the two genomes must be uniques.
-* A lot of contigs will cause the graph not legible.
+* A lot of contigs will cause the graph not legible, try to filter with ``-l`` parameter, or reduce your contigs number.
