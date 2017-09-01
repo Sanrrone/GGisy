@@ -1,5 +1,5 @@
 # GGisy
-Genome-Genome circle synteny is a program that show the closest regions between two genomes along the all contigs using blast+. The program can cutoff (defined by user), the regions size based on the aligments length and their identities.
+Genome-Genome circle synteny is a program that show the closest regions between two genomes along the all contigs using blast+. The program can cutoff (defined by user), the regions size based on the aligments length and their identities. You can use this software to plot the similiraty between two or more regions (or whole genomes).
 
 ## Example output
 
