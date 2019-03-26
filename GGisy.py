@@ -21,7 +21,7 @@ from Bio import SeqIO
 
 def main():
 
-	parser = OptionParser(usage = "Usage: python GGisy.py -g1 genome1.fna -g2 genome2.fna")
+	parser = OptionParser(usage = "Usage: python GGisy.py -r genome1.fna -q genome2.fna")
 	parser.add_option("-r","--reference",dest="genome1",help="First genome to be used as reference", default=None)
 	parser.add_option("-q","--query",dest="genome2",help="Second genome to be used as query against the first genome (-r)", default=None)
 	parser.add_option("-l","--alignmentLength",dest="alignL",help="Aligment length cutoff in blast output [default: 1000]",default=1000)
