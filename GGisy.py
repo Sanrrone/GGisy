@@ -170,11 +170,11 @@ queryname<-unlist(strsplit(queryname,"_info.tsv"))[1]
 lowId<-min(handle$V3)
 fhand<-handle[handle$V6<handle$V7,]
 rhand<-handle[handle$V6>handle$V7,]
-linkf<-data.frame(seg1=fhand$V1, start1=fhand$V4, end1=fhand$V5, seg2=fhand$V2, start2=fhand$V6, end2=fhand$V7)
-linkr<-data.frame(seg1=rhand$V1, start1=rhand$V4, end1=rhand$V5, seg2=rhand$V2, start2=rhand$V6, end2=rhand$V7)
+linkf<-data.frame(seg1=fhand$V1, start1=fhand$V4, end1=fhand$V5, seg2=fhand$V2, start2=fhand$V6, end2=fhand$V7, stringsAsFactors = F)
+linkr<-data.frame(seg1=rhand$V1, start1=rhand$V4, end1=rhand$V5, seg2=rhand$V2, start2=rhand$V6, end2=rhand$V7, stringsAsFactors = F)
 #fix reverse positions
 for(i in 1:nrow(linkr)){
-  contign<-unfactor(linkr[i,4])
+  contign<-linkr[i,4]
   contigl<-ref[contign,3]
   linkr[i,5]<- contigl-linkr[i,5]+1
   linkr[i,6]<- contigl-linkr[i,6]+1
