@@ -1,18 +1,4 @@
-from __future__ import with_statement 
-
-# ==============================================================================
-# 						GGisy (python v2.7)
-#
-# Author: Sandro Valenzuela (sandrolvalenzuead@gmail.com)
-# Bugs and errors: https://github.com/Sanrrone/GGisy/issues
-#
-# Please type "python GGisy.py -h" for usage help
-#
-# ==============================================================================
-
-__author__ = 'Sandro Valenzuela (sandrolvalenzuead@gmail.com)'
-__version__ = '1.0'
-
+#!/usr/bin/python3
 import sys, os, subprocess, glob, csv, collections
 from optparse import OptionParser
 from operator import itemgetter
