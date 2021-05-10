@@ -1,5 +1,5 @@
 # GGisy
-Genome-Genome circle synteny is a program that show the closest regions between two genomes along the all contigs using blast+. The program can cutoff (defined by user), the regions size based on the aligments length and their identities. You can use this software to plot the similiraty between two or more regions (or whole genomes).
+Genome-Genome circle synteny is a little software that show the closest regions between two genomes along the all contigs using blast+. The program can cutoff (defined by user), the regions size based on the aligments length and their identities. You can use this software to plot the similiraty between two or more regions (or whole genomes).
 
 ## Example output
 
@@ -7,14 +7,14 @@ Genome-Genome circle synteny is a program that show the closest regions between 
 ------
 ![](example/synteny2.png)
 
-## Requeriments
+## Requisites
 
 * R (tested in 3.3.1) with the following libraries:
-	* omiccircos
+	* omiccircos (pre: libcurl-openssl-dev)
 	* RColorBrewer
 	* varhandle
 
-* Python v2.7 with biopython library
+* Python >= 3.5 with biopython library
 * BLAST+
 
 ## Usage
@@ -47,15 +47,15 @@ where:
 
 Synteny between two genomes filtering regions <= 5000bp:
 
-	python GGisy.py -r example/genome1.fna -q example/genome2.fna -l 10000 -i 50 -t 8 -c False
+	GGisy.py -r example/genome1.fna -q example/genome2.fna -l 10000 -i 50 -t 8 -c False
 	
 Synteny between two genomes conserving all files (indexes, raw blast output, parsed blast output, etc.)
 
-	python GGisy.py -r example/genome1.fna -q example/genome2.fna -c False
+	GGisy.py -r example/genome1.fna -q example/genome2.fna -c False
 
 Synteny between two genomes setting identity percent cutoff:
 
-	python GGisy.py -r example/genome1.fna -q example/genome2.fna -i 90
+	GGisy.py -r example/genome1.fna -q example/genome2.fna -i 90
 
 
 ## Trick
@@ -64,7 +64,7 @@ Synteny between two genomes setting identity percent cutoff:
 
 example:
 	
-	python GGisy.py -r [reference] -q [query] -l 10000  -b myBlastOutput.tsv
+	GGisy.py -r [reference] -q [query] -l 10000  -b myBlastOutput.tsv
 
 * GGisy have an option to don't delete the files (**-c False**), if you run for the first the program you notice a file called **tmp.tsv**, this file es the blast output in format 6, and you can avoid the next run just passing this file with the **-b** option, I recommend to use this option to re-run the program with another cutoff parameters (**-l** and **-i**)
 	

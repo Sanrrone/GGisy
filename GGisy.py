@@ -44,39 +44,39 @@ def main():
 
 	#check variables
 	if not genome1 or genome1 is None:
-		print "* No genome was provided (-g1), use -h for help"
+		print("* No genome was provided (-g1), use -h for help")
 		sys.exit()
 	else:
 		if os.path.isfile(genome1) == False:
-			print "*",genome1," doesn't exist"
+			print("*",genome1," doesn't exist")
 			sys.exit()
 
 	if not genome2 or genome2 is None:
-		print "* its mandatory provide 2 genomes (-g2), use -h for help"
+		print("* its mandatory provide 2 genomes (-g2), use -h for help")
 		sys.exit()
 	else:
 		if os.path.isfile(genome2) == False:
-			print "* ",genome2," doesn't exist"
+			print("* ",genome2," doesn't exist")
 			sys.exit()
 
 	if blastout != None:
 		if os.path.isfile(blastout) == False:
-			print "* ", blastout, "not found, check if file exist or let the program do the blast omiting this option (-b)"
+			print("* ", blastout, "not found, check if file exist or let the program do the blast omiting this option (-b)")
 			sys.exit()
 
 	blastBIN=which("blastn")
 	if blastBIN == None:
-		print "No blastn was found, install it before continue (make sure is in your $PATH)"
+		print("No blastn was found, install it before continue (make sure is in your $PATH)")
 		sys.exit()
 
 	makeblastBIN=which("makeblastdb")
 	if makeblastBIN == None:
-		print "No makeblastdb was found, install it from blast+ (make sure is in your $PATH)"
+		print("No makeblastdb was found, install it from blast+ (make sure is in your $PATH)")
 		sys.exit()
 
 	rscriptBIN=which("Rscript")
 	if rscriptBIN == None:
-		print "No Rscript was found, make sure is in your $PATH"
+		print("No Rscript was found, make sure is in your $PATH")
 		sys.exit()
 
 	Inputs = collections.namedtuple('Inputs', ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'])
@@ -384,6 +384,7 @@ if __name__ == '__main__':
 		cleanfiles(ref,que)
 
 	sys.exit()
+
 
 
 
