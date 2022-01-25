@@ -40,8 +40,10 @@ where:
 * -q is the query genome to be used against the reference.
 * -l is the aligment length cutoff to post processing.
 * -i is the identity cutoff for the aligment.
+* -c is the coverage cutoof for query sequences.
 * -t is the threads used for blastn
-* -c is a boolean to delete the files generated or not (True by default).
+* -k is a boolean to keep or delete the files generated(True by default).
+* -o is the output prefix for output files
 
 ### Examples:
 
