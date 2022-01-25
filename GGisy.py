@@ -24,12 +24,14 @@ def main():
 	parser = OptionParser(usage = "Usage: python GGisy.py -r genome1.fna -q genome2.fna")
 	parser.add_option("-r","--reference",dest="genome1",help="First genome to be used as reference", default=None)
 	parser.add_option("-q","--query",dest="genome2",help="Second genome to be used as query against the first genome (-r)", default=None)
-	parser.add_option("-l","--alignmentLength",dest="alignL",help="Aligment length cutoff in blast output [default: 1000]",default=1000)
+	parser.add_option("-l","--alignmentLength",dest="alignL",help="Aligment length cutoff in blast output",default=1000)
+	parser.add_option("-o","--outprefix",dest="outfile",help="output prefix for output files",default="synteny")
+	parser.add_option("-c","--coverage",dest="coverage",help="query coverage to be considered",default=50)
 	parser.add_option("-e","--evalue",dest="evalue",help="E-value cutoff for blastn search [default: 1e-3]",default=1e-3)
-	parser.add_option("-i","--identity",dest="Identity",help="Identity cutoff on the blastn alignment to consider the region [default: 50]",default=50)
+	parser.add_option("-i","--identity",dest="Identity",help="Identity cutoff on the blastn alignment to consider the region",default=50)
 	parser.add_option("-t","--threads",dest="Threads",help="Number of threads to be used for blast [default: 4]",default=4)
 	parser.add_option("-b","--blastout",dest="Blastout",help="Blast output file to be used instead doing it [default: none]",default=None)
-	parser.add_option("-c","--clean",dest="clean",help="clean files after execution [default: True]",default=True)
+	parser.add_option("-k","--keepfiles",dest="clean",help="clean files after execution [default: True]",default=True, action='store_false')
 
 	(options,args) = parser.parse_args()
 
@@ -41,6 +43,8 @@ def main():
 	threads= str(options.Threads) #for subcallproccess must be str()
 	blastout= options.Blastout #dont cast to str
 	cleanf=options.clean
+	coverage=int(options.coverage)
+	outfile= options.outfile
 
 	#check variables
 	if not genome1 or genome1 is None:
@@ -79,8 +83,8 @@ def main():
 		print("No Rscript was found, make sure is in your $PATH")
 		sys.exit()
 
-	Inputs = collections.namedtuple('Inputs', ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8'])
-	I = Inputs(genome1, genome2, alignL, evalue, Identity, threads, blastout, cleanf)
+	Inputs = collections.namedtuple('Inputs', ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'])
+	I = Inputs(genome1, genome2, alignL, evalue, Identity, threads, blastout, cleanf, coverage, outfile)
 	return I
 
 def which(program): #function to check if some program exists 
@@ -105,23 +109,23 @@ def blasting(genome1, genome2, evalue, threads):
 
 	subprocess.call(["makeblastdb", "-in", genome1, "-input_type", "fasta", "-dbtype", "nucl", "-out", "ref"])
 	subprocess.call(["blastn", "-query", genome2, "-db", "ref", 
-		"-evalue", evalue, "-outfmt", "6", "-strand", "both", 
+		"-evalue", evalue, "-outfmt", "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen", "-strand", "both", 
 		"-num_threads", threads, "-out", "tmp.tsv"])
 
 	return str("tmp.tsv")
 
-def filterBlastOutput(blastout,alignL,evalue,identity):
+def filterBlastOutput(blastout,alignL,evalue,identity,coverage, outfile):
 
-	PARSED=open("synteny.tsv",'w') #overwrite if exist
+	PARSED=open(outfile+".tsv",'w') #overwrite if exist
 	with open(blastout) as tsvfile:
 		tsvreader = csv.reader(tsvfile, delimiter="\t")
 		for line in tsvreader:
 
-			#formula line [n-1:n]
-			toint = [int(i) for i in line[3:4]]
-			if toint[0] >= alignL:
-				toint = [float(i) for i in line[2:3]]
-				if toint[0] >= float(identity):
+			toint = int(line[3])
+			cov = (toint/float(line[12]))*100
+			if toint >= alignL and cov >= coverage:
+				toint = float(line[2])
+				if toint >= float(identity):
 					PARSED.write("\t".join(map(str, line[0:3]+line[6:10]))+"\n")
 
 	PARSED.close()
@@ -141,7 +145,7 @@ def parsingGenomes(genome):
 	PARSED.close
 	return str(gname+"_info.tsv")
 
-def handleR(conn, reference, query, alignL):
+def handleR(conn, reference, query, alignL, outfile):
 
 	plotstep=open("handle.R", 'w')
 	plotstep.write("""rm(list=ls());
@@ -153,6 +157,7 @@ handlefile<-as.character(args[6])
 refname<-as.character(args[7])
 queryname<-as.character(args[8])
 filterl<-as.numeric(args[9])
+outfile<-as.character(args[10])
 handle<-read.table(handlefile,sep = "\\t",stringsAsFactors = F,check.names = F)
 ref<-read.table(refname,sep = "\\t",stringsAsFactors = F,check.names = F)
 query<-read.table(queryname,sep = "\\t", stringsAsFactors = F,check.names = F)
@@ -258,7 +263,7 @@ try({
 },silent = T)
 
 
-pdf(file="synteny.pdf", width = 10, height =10)
+pdf(file=paste0(outfile,".pdf"), width = 10, height =10)
 
 if(nrow(data)<=20){
   par(mar=c(2,2,2,2))
@@ -349,7 +354,7 @@ if(nrow(data)<=20){
 }
 dev.off()""")
 	plotstep.close()
-	subprocess.call(["Rscript", "handle.R", conn, reference, query, str(alignL), "--vanilla"])
+	subprocess.call(["Rscript", "handle.R", conn, reference, query, str(alignL), outfile, "--vanilla"])
 
 
 def cleanfiles(ginfo1, ginfo2):
@@ -375,17 +380,12 @@ if __name__ == '__main__':
 	if blastout is None:
 		blastout=blasting(genome1=mainV.v1, genome2=mainV.v2, evalue=mainV.v4, threads=mainV.v6)
 
-	filterBlastOutput(blastout=blastout, alignL=mainV.v3, evalue=mainV.v4, identity=mainV.v5)
+	filterBlastOutput(blastout=blastout, alignL=mainV.v3, evalue=mainV.v4, identity=mainV.v5, coverage=mainV.v9, outfile=mainV.v10)
 	ref=parsingGenomes(genome=mainV.v1)
 	que=parsingGenomes(genome=mainV.v2)
-	handleR(conn="synteny.tsv",reference=ref, query=que, alignL=mainV.v3)
+	handleR(conn=mainV.v10+".tsv",reference=ref, query=que, alignL=mainV.v3, outfile=mainV.v10)
 	
-	if mainV.v8 == True:
+	if mainV.v8:
 		cleanfiles(ref,que)
 
 	sys.exit()
-
-
-
-
-
