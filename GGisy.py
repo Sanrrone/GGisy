@@ -356,25 +356,35 @@ if(nrow(data)<=20){
 }
 dev.off()""")
 	plotstep.close()
+	print("Running: handle.R",conn,reference,query,str(alignL), outfile)
 	subprocess.call(["Rscript", "handle.R", conn, reference, query, str(alignL), outfile, "--vanilla"])
 
 
 def cleanfiles(ginfo1, ginfo2):
+	wd = os. getcwd()
+	if os.path.isfile(wd+"/tmp.tsv"):
+		os.remove(wd+"/tmp.tsv")
+	if os.path.isfile(wd+"/ref.nin"):
+		os.remove(wd+"/ref.nin")
+	if os.path.isfile(wd+"/ref.nsq"):
+		os.remove(wd+"/ref.nsq")
+	if os.path.isfile(wd+"/ref.nhr"):
+		os.remove(wd+"/ref.nhr")
+	if os.path.isfile(wd+"/ref.ndb"):
+		os.remove(wd+"/ref.ndb")
+	if os.path.isfile(wd+"/ref.not"):
+		os.remove(wd+"/ref.not")
+	if os.path.isfile(wd+"/ref.ntf"):
+		os.remove(wd+"/ref.ntf")
+	if os.path.isfile(wd+"/ref.nto"):
+		os.remove(wd+"/ref.nto")
 
-	if os.path.isfile("tmp.tsv"):
-		os.remove("tmp.tsv")
-	if os.path.isfile("ref.nin"):
-		os.remove("ref.nin")
-	if os.path.isfile("ref.nsq"):
-		os.remove("ref.nsq")
-	if os.path.isfile("ref.nhr"):
-		os.remove("ref.nhr")
-	if os.path.isfile("handle.R"):
-		os.remove("handle.R")
-	if os.path.isfile(ginfo1):
-		os.remove(ginfo1)
-	if os.path.isfile(ginfo2):
-		os.remove(ginfo2)
+	if os.path.isfile(wd+"/handle.R"):
+		os.remove(wd+"/handle.R")
+	if os.path.isfile(wd+"/"+ginfo1):
+		os.remove(wd+"/"+ginfo1)
+	if os.path.isfile(wd+"/"+ginfo2):
+		os.remove(wd+"/"+ginfo2)
 
 if __name__ == '__main__':
 	mainV=main()
@@ -383,6 +393,14 @@ if __name__ == '__main__':
 		blastout=blasting(genome1=mainV.v1, genome2=mainV.v2, evalue=mainV.v4, threads=mainV.v6)
 
 	filterBlastOutput(blastout=blastout, alignL=mainV.v3, evalue=mainV.v4, identity=mainV.v5, coverage=mainV.v9, outfile=mainV.v10)
+	if os.stat(mainV.v10+".tsv").st_size == 0:
+		print("No match between query and reference")
+		if os.path.isfile("synteny.tsv"):
+			os.remove("synteny.tsv")
+		if mainV.v8:
+			cleanfiles("fake","fake")
+		sys.exit()
+
 	ref=parsingGenomes(genome=mainV.v1)
 	que=parsingGenomes(genome=mainV.v2)
 	handleR(conn=mainV.v10+".tsv",reference=ref, query=que, alignL=mainV.v3, outfile=mainV.v10)
