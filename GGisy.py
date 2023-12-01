@@ -19,91 +19,6 @@ from operator import itemgetter
 from Bio import SeqIO
 
 
-def main():
-
-	parser = OptionParser(usage = "Usage: python GGisy.py -r genome1.fna -q genome2.fna")
-	parser.add_option("-r","--reference",dest="genome1",help="First genome to be used as reference", default=None)
-	parser.add_option("-q","--query",dest="genome2",help="Second genome to be used as query against the first genome (-r)", default=None)
-	parser.add_option("-l","--alignmentLength",dest="alignL",help="Aligment length cutoff in blast output",default=1000)
-	parser.add_option("-o","--outprefix",dest="outfile",help="output prefix for output files",default="synteny")
-	parser.add_option("-c","--coverage",dest="coverage",help="query coverage to be considered",default=50)
-	parser.add_option("-e","--evalue",dest="evalue",help="E-value cutoff for blastn search [default: 1e-3]",default=1e-3)
-	parser.add_option("-i","--identity",dest="Identity",help="Identity cutoff on the blastn alignment to consider the region",default=50)
-	parser.add_option("-t","--threads",dest="Threads",help="Number of threads to be used for blast [default: 4]",default=4)
-	parser.add_option("-b","--blastout",dest="Blastout",help="Blast output file to be used instead doing it [default: none]",default=None)
-	parser.add_option("-k","--keepfiles",dest="clean",help="clean files after execution [default: True]",default=True, action='store_false')
-
-	(options,args) = parser.parse_args()
-
-	genome1 = str(options.genome1)
-	genome2 = str(options.genome2)
-	alignL= int(options.alignL)
-	evalue= str(options.evalue)
-	Identity= int(options.Identity)
-	threads= str(options.Threads) #for subcallproccess must be str()
-	blastout= options.Blastout #dont cast to str
-	cleanf=options.clean
-	coverage=int(options.coverage)
-	outfile= options.outfile
-
-	#check variables
-	if not genome1 or genome1 is None:
-		print("* No genome was provided (-g1), use -h for help")
-		sys.exit()
-	else:
-		if os.path.isfile(genome1) == False:
-			print("*",genome1," doesn't exist")
-			sys.exit()
-
-	if not genome2 or genome2 is None:
-		print("* its mandatory provide 2 genomes (-g2), use -h for help")
-		sys.exit()
-	else:
-		if os.path.isfile(genome2) == False:
-			print("* ",genome2," doesn't exist")
-			sys.exit()
-
-	if blastout != None:
-		if os.path.isfile(blastout) == False:
-			print("* ", blastout, "not found, check if file exist or let the program do the blast omiting this option (-b)")
-			sys.exit()
-
-	blastBIN=which("blastn")
-	if blastBIN == None:
-		print("No blastn was found, install it before continue (make sure is in your $PATH)")
-		sys.exit()
-
-	makeblastBIN=which("makeblastdb")
-	if makeblastBIN == None:
-		print("No makeblastdb was found, install it from blast+ (make sure is in your $PATH)")
-		sys.exit()
-
-	rscriptBIN=which("Rscript")
-	if rscriptBIN == None:
-		print("No Rscript was found, make sure is in your $PATH")
-		sys.exit()
-
-	Inputs = collections.namedtuple('Inputs', ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10'])
-	I = Inputs(genome1, genome2, alignL, evalue, Identity, threads, blastout, cleanf, coverage, outfile)
-	return I
-
-def which(program): #function to check if some program exists 
-	def is_exe(fpath):
-		return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
-	fpath, fname = os.path.split(program)
-	if fpath:
-		if is_exe(program):
-			return program
-	else:
-		for path in os.environ["PATH"].split(os.pathsep):
-			path = path.strip('"')
-			exe_file = os.path.join(path, program)
-			if is_exe(exe_file):
-				return exe_file
-
-	return None
-
 def blasting(genome1, genome2, evalue, threads):
 	#searching for blast binaries
 
@@ -116,7 +31,7 @@ def blasting(genome1, genome2, evalue, threads):
 
 def filterBlastOutput(blastout,alignL,evalue,identity,coverage, outfile):
 
-	PARSED=open(outfile+".tsv",'w') #overwrite if exist
+	PARSED=open(outfile+"_parsed.tsv",'w') #overwrite if exist
 	with open(blastout) as tsvfile:
 		tsvreader = csv.reader(tsvfile, delimiter="\t")
 		for line in tsvreader:
@@ -281,10 +196,10 @@ if(nrow(data)<=20){
   }  
   if(nrow(linkr)>0){
     circos(R=440, cir=tocir, mapping=linkr , type="link.pg", lwd=0.5, col=linkr$colors,xc = xorigin,yc = yorigin)
-    newlinkr<-linkr
-    newlinkr$start1<-newlinkr$start1+as.integer((newlinkr$end1-newlinkr$start1)/2)+1
-    newlinkr$start2<-newlinkr$start2+as.integer((newlinkr$end2-newlinkr$start2)/2)-1
-    circos(R=440, cir=tocir, W=10, mapping=newlinkr , type="link", lwd=0.6, col=black,xc = xorigin,yc = yorigin)  
+    #newlinkr<-linkr
+    #newlinkr$start1<-newlinkr$start1+as.integer((newlinkr$end1-newlinkr$start1)/2)+1
+    #newlinkr$start2<-newlinkr$start2+as.integer((newlinkr$end2-newlinkr$start2)/2)-1
+    #circos(R=440, cir=tocir, W=10, mapping=newlinkr , type="link", lwd=0.6, col=black,xc = xorigin,yc = yorigin)  
   }
 
   
@@ -298,11 +213,7 @@ if(nrow(data)<=20){
          fill=c("dark blue","#FEE496"),
          border = c("dark blue","#FEE496"),text.width=c(0.5,0.5),
          title=paste("Contigs align >= ", filterl, " bp", sep=""))
-  legend(x = 1520, y=1300, legend = c("Forward","Reverse"),lty = c(0,1),merge=T,seg.len = 0.6,
-         ncol = 1, cex = 0.8,  bty="n",
-         fill="white",
-         border = "black",text.width=c(0.5,0.5),
-         title="Strand Match\n(on reference)")
+
   legend(x = 1505, y=1100, legend = c("100","","","","","","","","","",(100-lowId)/2 + lowId,"","","","","","","","",lowId),
          ncol = 1, cex = 0.8,  bty="n",
          fill=colors,
@@ -330,10 +241,10 @@ if(nrow(data)<=20){
     highlightq <- c(420, 450, query[1,1], 1, query[nrow(query),1], query[nrow(query),3], "#FEE496", NA)
     circos(cir=tocir, mapping=highlightq, type="hl",xc = xorigin,yc = yorigin)
     circos(R=400, cir=tocir, mapping=linkr , type="link.pg", lwd=0.5, col=linkr$colors,xc = xorigin,yc = yorigin)
-    newlinkr<-linkr
-    newlinkr$start1<-newlinkr$start1+as.integer((newlinkr$end1-newlinkr$start1)/2)+1
-    newlinkr$start2<-newlinkr$start2+as.integer((newlinkr$end2-newlinkr$start2)/2)-1
-    circos(R=400, cir=tocir, W=10, mapping=newlinkr , type="link", lwd=0.3, col=black,xc = xorigin,yc = yorigin)
+    #newlinkr<-linkr
+    #newlinkr$start1<-newlinkr$start1+as.integer((newlinkr$end1-newlinkr$start1)/2)+1
+    #newlinkr$start2<-newlinkr$start2+as.integer((newlinkr$end2-newlinkr$start2)/2)-1
+    #circos(R=400, cir=tocir, W=10, mapping=newlinkr , type="link", lwd=0.3, col=black,xc = xorigin,yc = yorigin)
     
   }
   legend(x = 210, y=1500, legend = c(paste("Reference: ", nrow(ref), " (", sum(ref$V3), " bp)", sep = ""), paste("Query: ",nrow(query), " (", sum(query$V3), " bp)", sep="")),
@@ -341,11 +252,7 @@ if(nrow(data)<=20){
          fill=c("dark blue","#FEE496"),
          border = c("dark blue","#FEE496"),text.width=c(0.5,0.5),
          title=paste("Contigs align >= ", filterl, " bp", sep=""))
-  legend(x = 270, y=1300, legend = c("Forward","Reverse"),lty = c(0,1),merge=T,seg.len = 0.6,
-         ncol = 1, cex = 0.8,  bty="n",
-         fill="white",
-         border = "black",text.width=c(0.5,0.5),
-         title="Strand Match\\n(on reference)")
+
   legend(x = 990, y=1500, legend = c("100","","","","","","","","","",(100-lowId)/2 + lowId,"","","","","","","","",lowId),
          ncol = 1, cex = 0.8,  bty="n",
          fill=colors,
@@ -386,26 +293,106 @@ def cleanfiles(ginfo1, ginfo2):
 	if os.path.isfile(wd+"/"+ginfo2):
 		os.remove(wd+"/"+ginfo2)
 
-if __name__ == '__main__':
-	mainV=main()
-	blastout=mainV.v7
-	if blastout is None:
-		blastout=blasting(genome1=mainV.v1, genome2=mainV.v2, evalue=mainV.v4, threads=mainV.v6)
 
-	filterBlastOutput(blastout=blastout, alignL=mainV.v3, evalue=mainV.v4, identity=mainV.v5, coverage=mainV.v9, outfile=mainV.v10)
-	if os.stat(mainV.v10+".tsv").st_size == 0:
+def which(program): #function to check if some program exists 
+	def is_exe(fpath):
+		return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+	fpath, fname = os.path.split(program)
+	if fpath:
+		if is_exe(program):
+			return program
+	else:
+		for path in os.environ["PATH"].split(os.pathsep):
+			path = path.strip('"')
+			exe_file = os.path.join(path, program)
+			if is_exe(exe_file):
+				return exe_file
+
+
+if __name__ == '__main__':
+
+	parser = OptionParser(usage = "Usage: python GGisy.py -r genome1.fna -q genome2.fna")
+	parser.add_option("-r","--reference",dest="genome1",help="First genome to be used as reference", default=None)
+	parser.add_option("-q","--query",dest="genome2",help="Second genome to be used as query against the first genome (-r)", default=None)
+	parser.add_option("-l","--alignmentLength",dest="alignL",help="Aligment length cutoff in blast output",default=1000)
+	parser.add_option("-o","--outprefix",dest="outfile",help="output prefix for output files",default="synteny")
+	parser.add_option("-c","--coverage",dest="coverage",help="query coverage to be considered",default=50)
+	parser.add_option("-e","--evalue",dest="evalue",help="E-value cutoff for blastn search [default: 1e-3]",default=1e-3)
+	parser.add_option("-i","--identity",dest="Identity",help="Identity cutoff on the blastn alignment to consider the region",default=50)
+	parser.add_option("-t","--threads",dest="Threads",help="Number of threads to be used for blast [default: 4]",default=4)
+	parser.add_option("-b","--blastout",dest="Blastout",help="Blast output file to be used instead doing it [default: none]",default=None)
+	parser.add_option("-k","--keepfiles",dest="clean",help="clean files after execution [default: True]",default=True, action='store_false')
+
+	(options,args) = parser.parse_args()
+
+	genome1 = str(options.genome1)
+	genome2 = str(options.genome2)
+	alignL= int(options.alignL)
+	evalue= str(options.evalue)
+	Identity= int(options.Identity)
+	threads= str(options.Threads) #for subcallproccess must be str()
+	blastout= options.Blastout #dont cast to str
+	cleanf=options.clean
+	coverage=int(options.coverage)
+	outfile= options.outfile
+
+	#check variables
+	if not genome1 or genome1 is None:
+		print("* No genome was provided (-g1), use -h for help")
+		sys.exit()
+	else:
+		if os.path.isfile(genome1) == False:
+			print("*",genome1," doesn't exist")
+			sys.exit()
+
+	if not genome2 or genome2 is None:
+		print("* its mandatory provide 2 genomes (-g2), use -h for help")
+		sys.exit()
+	else:
+		if os.path.isfile(genome2) == False:
+			print("* ",genome2," doesn't exist")
+			sys.exit()
+
+	if blastout != None:
+		if os.path.isfile(blastout) == False:
+			print("* ", blastout, "not found, check if file exist or let the program do the blast omiting this option (-b)")
+			sys.exit()
+
+	blastBIN=which("blastn")
+	if blastBIN == None:
+		print("No blastn was found, install it before continue (make sure is in your $PATH)")
+		sys.exit()
+
+	makeblastBIN=which("makeblastdb")
+	if makeblastBIN == None:
+		print("No makeblastdb was found, install it from blast+ (make sure is in your $PATH)")
+		sys.exit()
+
+	rscriptBIN=which("Rscript")
+	if rscriptBIN == None:
+		print("No Rscript was found, make sure is in your $PATH")
+		sys.exit()
+
+
+	if blastout is None:
+		blastout=blasting(genome1=genome1, genome2=genome2, evalue=evalue, threads=threads)
+
+	filterBlastOutput(blastout=blastout, alignL=alignL, evalue=evalue, identity=Identity, coverage=coverage, outfile=outfile)
+	if os.stat(outfile+"_parsed.tsv").st_size == 0:
 		print("No match between query and reference")
+
 		if os.path.isfile("synteny.tsv"):
 			os.remove("synteny.tsv")
-		if mainV.v8:
+		if cleanf:
 			cleanfiles("fake","fake")
 		sys.exit()
 
-	ref=parsingGenomes(genome=mainV.v1)
-	que=parsingGenomes(genome=mainV.v2)
-	handleR(conn=mainV.v10+".tsv",reference=ref, query=que, alignL=mainV.v3, outfile=mainV.v10)
+	ref=parsingGenomes(genome=genome1)
+	que=parsingGenomes(genome=genome2)
+	handleR(conn=outfile+"_parsed.tsv",reference=ref, query=que, alignL=alignL, outfile=outfile)
 	
-	if mainV.v8:
+	if cleanf:
 		cleanfiles(ref,que)
 
-	sys.exit()
+
