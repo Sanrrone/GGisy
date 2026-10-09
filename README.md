@@ -1,93 +1,111 @@
 # GGisy
-Genome-Genome circle synteny is a little software that show the closest regions between two genomes along the all contigs using blast+. The program can cutoff (defined by user), the regions size based on the aligments length and their identities. You can use this software to plot the similiraty between two or more regions (or genomes).
 
-## Example output
+**Genome-Genome circle synteny.** GGisy compares two genomes (or any two sets of sequences) with BLAST+ and draws the matching regions as a circular synteny plot, with every link coloured by its percent identity. It works with complete genomes and with draft assemblies made of many contigs.
 
-![](example/synteny1.png)
-------
-![](example/synteny2.png)
+![GGisy example output](example/synteny1.png)
 
-## Requisites
+![GGisy example output](example/synteny2.png)
 
-* R (tested in 3.3.1) with the following libraries:
-	* omiccircos (pre: libcurl-openssl-dev)
-	* RColorBrewer
-	* varhandle
+## How it works
 
-* Python >= 3.5 with biopython library
-* BLAST+
+1. Builds a BLAST database from the reference and searches the query against it with `blastn`, on both strands.
+2. Keeps only the matches that pass three cutoffs: alignment length, percent identity, and how much of the query contig the alignment covers.
+3. Draws the reference contigs (dark blue) and the query contigs (yellow) around a circle and links the matching regions, coloured from the lowest identity kept up to 100%. Only contigs with at least one match are drawn.
 
-## Usage
+The output files are named after the `-o` prefix (default `synteny`):
 
-GGisy have two ways to run, the easy and complete:
+| File | Content |
+|---|---|
+| `synteny.pdf` | the circular synteny plot |
+| `synteny_parsed.tsv` | the matches that passed the cutoffs: query contig, reference contig, percent identity, query start and end, reference start and end |
 
-easy:
+## Requirements
 
-	python GGisy.py -r example/genome1.fna -q example/genome2.fna
-	
-where:
+- Python 3 with Biopython
+- BLAST+ (`blastn` and `makeblastdb` on your `PATH`)
+- R (`Rscript` on your `PATH`) with the packages OmicCircos (Bioconductor), RColorBrewer and varhandle
 
-* -r is the reference genome (in fasta format)
-* -q is the query genome to be used against the reference (in fasta format).
+One way to install them:
 
-complete:
+```bash
+pip install biopython
+sudo apt install ncbi-blast+        # or: conda install -c bioconda blast
+Rscript -e 'install.packages(c("RColorBrewer", "varhandle", "BiocManager"), repos = "https://cloud.r-project.org")'
+Rscript -e 'BiocManager::install("OmicCircos")'
+```
 
-	python GGisy.py -r example/genome1.fna -q example/genome2.fna -l 10000 -i 50 -t 8 -c False
-	
-where:
+## Quick start
 
-* -r is the reference genome.
-* -q is the query genome to be used against the reference.
-* -l is the aligment length cutoff to post processing.
-* -i is the identity cutoff for the aligment.
-* -c is the coverage cutoof for query sequences.
-* -t is the threads used for blastn
-* -k is a boolean to keep or delete the files generated(True by default).
-* -o is the output prefix for output files
+```bash
+git clone https://github.com/sanrrone/GGisy.git
+cd GGisy
+python GGisy.py -r example/genome1.fna -q example/genome2.fna
+```
 
-### Examples:
+This writes `synteny.pdf` and `synteny_parsed.tsv` to the current directory.
 
-Synteny between two genomes filtering regions <= 5000bp:
+## Options
 
-	GGisy.py -r example/genome1.fna -q example/genome2.fna -l 10000 -i 50 -t 8 -c False
-	
-Synteny between two genomes conserving all files (indexes, raw blast output, parsed blast output, etc.)
+| Option | Meaning | Default |
+|---|---|---|
+| `-r`, `--reference` | reference genome, FASTA (required) | |
+| `-q`, `--query` | query genome, FASTA (required) | |
+| `-l`, `--alignmentLength` | minimum alignment length, in bp | 1000 |
+| `-i`, `--identity` | minimum percent identity of an alignment | 50 |
+| `-c`, `--coverage` | minimum alignment length as a percentage of the query contig's length | 50 |
+| `-e`, `--evalue` | E-value cutoff for `blastn` | 1e-3 |
+| `-t`, `--threads` | threads used by `blastn` | 4 |
+| `-o`, `--outprefix` | prefix for the output files | synteny |
+| `-b`, `--blastout` | use an existing BLAST table instead of running BLAST (see below) | |
+| `-k`, `--keepfiles` | keep the intermediate files; takes no value | files are deleted |
 
-	GGisy.py -r example/genome1.fna -q example/genome2.fna -c False
+## Examples
 
-Synteny between two genomes setting identity percent cutoff:
+Keep only long and close matches, at least 10 kb and 90% identity, using 8 threads:
 
-	GGisy.py -r example/genome1.fna -q example/genome2.fna -i 90
+```bash
+python GGisy.py -r example/genome1.fna -q example/genome2.fna -l 10000 -i 90 -t 8
+```
 
+Relax the filters for short sequences such as plasmids or single loci, and name the output:
 
-## Trick
+```bash
+python GGisy.py -r plasmid_A.fna -q plasmid_B.fna -l 200 -c 10 -o plasmids
+```
 
-* You can avoid the blast work if you provide a blast output with "-b" (output format 6 is mandatory), with this parameter the program jump directly to parse it and you only have to define the cutoffs (or not).
+## Trying other cutoffs without running BLAST again
 
-example:
-	
-	GGisy.py -r [reference] -q [query] -l 10000  -b myBlastOutput.tsv
+BLAST is the slow step. Run once with `-k`, which keeps the raw BLAST table as `tmp.tsv`, copy that table to a name of your own, and reuse it with `-b`:
 
-* GGisy have an option to don't delete the files (**-c False**), if you run for the first the program you notice a file called **tmp.tsv**, this file es the blast output in format 6, and you can avoid the next run just passing this file with the **-b** option, I recommend to use this option to re-run the program with another cutoff parameters (**-l** and **-i**)
-	
-## Warnings
+```bash
+python GGisy.py -r example/genome1.fna -q example/genome2.fna -k
+cp tmp.tsv blast.tsv
+python GGisy.py -r example/genome1.fna -q example/genome2.fna -b blast.tsv -l 5000 -i 80 -o strict
+```
 
-* The contigs name between the two genomes must be uniques.
-* A lot of contigs will cause the graph not legible, try to filter with ``-l`` parameter, or reduce your contigs number.
+Copy the table first because any run without `-k` deletes `tmp.tsv` when it finishes.
 
-## External useful tools
-check for these tools to extract some useful information from your data:
+You can also pass a BLAST table made elsewhere. It must be tabular, with the query genome (`-q`) as query and the reference genome (`-r`) as subject, and with these 13 columns in this order:
 
-* [multiGenomicContext](https://github.com/Sanrrone/multiGenomicContext): Check the genomic context of several genomes or sequence just providing the GBK files.
+```bash
+-outfmt "6 qseqid sseqid pident length mismatch gapopen qstart qend sstart send evalue bitscore qlen"
+```
 
-* [fetchMyLineage](https://github.com/Sanrrone/fetchMyLineage): Return the complete lineage of your organism just providing the genus and species names.
+The standard `-outfmt 6` has only 12 columns and lacks `qlen`, which GGisy needs to compute coverage.
 
-* [extractSeq](https://github.com/Sanrrone/extractSeq): Extract and size defined sequence from and specific contig, from and specific genome.
+## Good to know
 
-* [plotMyGBK](https://github.com/Sanrrone/plotMyGBK): Plot your GBK in a circular graph with COG categories.
+- **Contig names must be unique across both files.** A contig called `contig_1` in both genomes breaks the plot, so add a prefix to the names in one of them first.
+- **Many contigs make the plot hard to read.** With more than 20 matched contigs in total, GGisy labels the two genomes instead of each contig. Raising `-l`, or removing short contigs before running, keeps the plot legible.
+- **One run per directory at a time.** GGisy writes its temporary files (`tmp.tsv`, the `ref.*` BLAST database, `handle.R`) into the current directory, so two runs in the same directory overwrite each other.
+- **No plot means no matches.** If nothing passes the cutoffs, GGisy prints `No match between query and reference` and stops. Lower `-l`, `-i` or `-c`.
 
-* [pasteTaxID](https://github.com/Sanrrone/pasteTaxID): fetch the taxonomic IDs to your fastas.
+## Other tools
 
-* [GGisy](https://github.com/Sanrrone/GGisy): Plot synteny of two sequence (you can use two genomes), and see the identity of the matched regions.
+- [multiGenomicContext](https://github.com/sanrrone/multiGenomicContext): see a protein in many genomic contexts from your GenBank files.
+- [extractSeq](https://github.com/sanrrone/extractSeq): extract a region from a contig, given its name and start and end positions.
+- [QOVirome](https://github.com/sanrrone/QOVirome): a pipeline for mining phages, viruses and bacteria from metagenome assemblies.
 
-* [getS2](https://github.com/Sanrrone/getS2): obtain the order parameter to each residue of your simulation.
+## License and contact
+
+GGisy is released under the Apache License 2.0 (see [LICENSE](LICENSE)). For bugs and questions, open an issue at https://github.com/sanrrone/GGisy/issues. If GGisy is useful in your work, please cite this repository.
