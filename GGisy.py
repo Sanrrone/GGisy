@@ -1,7 +1,7 @@
 from __future__ import with_statement 
 
 # ==============================================================================
-# 						GGisy (python v2.7)
+# 						GGisy (python v3)
 #
 # Author: Sandro Valenzuela (sandrolvalenzuead@gmail.com)
 # Bugs and errors: https://github.com/Sanrrone/GGisy/issues
